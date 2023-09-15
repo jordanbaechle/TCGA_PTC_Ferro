@@ -1,0 +1,209 @@
+
+```{r}
+library(magrittr)
+library(survival)
+library(survminer)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(gtable)
+library(org.Hs.eg.db)
+#library(KEGG.db)
+library(fgsea)
+library(enrichplot)
+library(clusterProfiler)
+library(magrittr)
+#library(dummies)
+library(formula.tools)
+library(doMC)
+library(foreach)
+library(gdata)
+library(gtools)
+library(gmodels)
+library(MASS)
+library(gplots)
+library(formula.tools)
+library(Hmisc) 
+library(Matrix)
+library(dplyr)
+library(GSVA)
+library(FPSOmics)
+library(tidyverse)
+library(DESeq2)
+library(EnhancedVolcano)
+```
+
+DEGs & Volcano Plot
+```{r}
+countData <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_counts.csv")
+metaData <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_GPX4.csv")
+metaData$GPX4 <- ifelse(metaData$GPX4 >= median(metaData$GPX4), "High", "Low")
+countData <- as.data.frame(countData)
+metaData <- as.data.frame(metaData)
+countData <- countData %>% distinct(gene, .keep_all = TRUE)
+dds <- DESeqDataSetFromMatrix(countData=countData, colData=metaData, design=~GPX4, tidy = TRUE)
+dds <- DESeq(dds)
+res <- results(dds)
+DEGs <- results(dds, contrast=c("GPX4", "High", "Low"))
+DEGs$gene <- rownames(DEGs)
+DEGs <- data.frame(DEGs)
+rownames(DEGs) <- DEGs$gene
+```
+
+```{r}
+FerroDB_Drivers <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/ferroptosis_driver.csv")
+FerroDB_Suppressors <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/ferroptosis_suppressor.csv")
+FerroDB_Markers <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/ferroptosis_marker.csv")
+# FerroDB_Unclassified_Regulators <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/ferroptosis_unclassified.csv")
+
+Ferro_Drivers_DEGs  <- merge(DEGs, FerroDB_Drivers, by="gene")
+Ferro_Drivers_DEGs  <- Ferro_Drivers_DEGs |> na.omit()
+Ferro_Drivers_DEGs  <- Ferro_Drivers_DEGs |> distinct(gene, .keep_all = TRUE)
+# Ferro_Drivers_DEGs  <- Ferro_Drivers_DEGs |> select(gene, log2FoldChange, padj, pvalue)
+# write_csv(Ferro_Drivers_DEGs, file = "/bigrock/FurmanLab/Jordan/TCGA/Ferro_Drivers_DEGs.csv")
+
+Ferro_Suppressors_DEGs <- merge(DEGs, FerroDB_Suppressors, by="gene")
+Ferro_Suppressors_DEGs  <- Ferro_Suppressors_DEGs |> na.omit()
+Ferro_Suppressors_DEGs  <- Ferro_Suppressors_DEGs |> distinct(gene, .keep_all = TRUE)
+# Ferro_Suppressors_DEGs  <- Ferro_Suppressors_DEGs |> select(gene, log2FoldChange, padj, pvalue)
+# write_csv(Ferro_Suppressors_DEGs, file = "/bigrock/FurmanLab/Jordan/TCGA/Ferro_Suppressors_DEGs.csv")
+
+Ferro_Markers_DEGs  <- merge(DEGs, FerroDB_Markers, by="gene")
+Ferro_Markers_DEGs  <- Ferro_Markers_DEGs |> na.omit()
+Ferro_Markers_DEGs  <- Ferro_Markers_DEGs |> distinct(gene, .keep_all = TRUE)
+# Ferro_Markers_DEGs  <- Ferro_Markers_DEGs |> select(gene, log2FoldChange, padj, pvalue)
+# write_csv(Ferro_Markers_DEGs, file = "/bigrock/FurmanLab/Jordan/TCGA/Ferro_Markers_DEGs.csv")
+```
+FerroDb Drivers (High GPX4 vs Low GPX4)
+```{r}
+ keyvals.colour <- ifelse(
+    Ferro_Drivers_DEGs$log2FoldChange < -0.5 & Ferro_Drivers_DEGs$pvalue < 10e-5, "#3C5488B2",
+      ifelse(Ferro_Drivers_DEGs$log2FoldChange > 0.5 & Ferro_Drivers_DEGs$pvalue < 10e-5, "#DC0000B2",
+        'black'))
+  keyvals.colour[is.na(keyvals.colour)] <- 'black'
+  names(keyvals.colour)[keyvals.colour == "#DC0000B2"] <- 'high'
+  names(keyvals.colour)[keyvals.colour == 'black'] <- 'ns'
+  names(keyvals.colour)[keyvals.colour == "#3C5488B2"] <- 'low'
+```
+
+```{r}
+PTC_FerroDb_drivers_mRNA_volcano <- EnhancedVolcano(Ferro_Drivers_DEGs,
+                      title = 'FerroDB Drivers: mRNA Expression',
+                      subtitle = 'High GPX4 vs Low GPX4',
+                      lab = Ferro_Drivers_DEGs$gene,
+                      x = 'log2FoldChange',
+                      y = 'pvalue',
+                      xlab = bquote(~Log[2]~ 'fold change'),
+                      pCutoff = 10e-5,
+                      FCcutoff = 0.5,
+                      labSize = 3,
+                      boxedLabels = TRUE,
+                      legendPosition = 'none',
+                      legendLabSize = 0,
+                      legendIconSize = 0,
+                      drawConnectors = TRUE,
+                      arrowheads = FALSE,
+                      colCustom = keyvals.colour,
+                      colAlpha = c(ifelse(abs(Ferro_Drivers_DEGs$pvalue) < 10e-5, 0.7, 0.2)),
+                      pointSize = c(ifelse(abs(Ferro_Drivers_DEGs$pvalue) < 10e-5, 3, 3)),
+                      shape = 20,
+                      max.overlaps = 10,
+                      # maxoverlapsConnectors = Inf,
+                      caption=NULL,
+                      widthConnectors = 0.5, xlim = c(-2, 2),ylim = c(0, -log10(10e-40)))
+PTC_FerroDb_drivers_mRNA_volcano <- PTC_FerroDb_drivers_mRNA_volcano + theme_pubr() +
+                                    scale_y_continuous(limits=c(0,-log10(10e-40)), breaks=seq(0,40,10)) +
+                                    theme(legend.position="none")
+PTC_FerroDb_drivers_mRNA_volcano
+ggsave("PTC_FerroDb_drivers_mRNA_volcano.png", plot=PTC_FerroDb_drivers_mRNA_volcano, path = figures, height=6, width=6, units=c("in"), dpi=300)
+```
+
+
+FerroDb Suppressors (High GPX4 vs Low GPX4)
+```{r}
+ keyvals.colour <- ifelse(
+    Ferro_Suppressors_DEGs$log2FoldChange < -0.5 & Ferro_Suppressors_DEGs$pvalue < 10e-5, "#3C5488B2",
+      ifelse(Ferro_Suppressors_DEGs$log2FoldChange > 0.5 & Ferro_Suppressors_DEGs$pvalue < 10e-5, "#DC0000B2",
+        'black'))
+  keyvals.colour[is.na(keyvals.colour)] <- 'black'
+  names(keyvals.colour)[keyvals.colour == "#DC0000B2"] <- 'high'
+  names(keyvals.colour)[keyvals.colour == 'black'] <- 'ns'
+  names(keyvals.colour)[keyvals.colour == "#3C5488B2"] <- 'low'
+```
+
+```{r}
+PTC_FerroDb_suppressors_mRNA_volcano <- EnhancedVolcano(Ferro_Suppressors_DEGs,
+                      title = 'FerroDB Suppressors: mRNA Expression',
+                      subtitle = 'High GPX4 vs Low GPX4',
+                      lab = Ferro_Suppressors_DEGs$gene,
+                      x = 'log2FoldChange',
+                      y = 'pvalue',
+                      xlab = bquote(~Log[2]~ 'fold change'),
+                      pCutoff = 10e-5,
+                      FCcutoff = 0.5,
+                      labSize = 3,
+                      boxedLabels = TRUE,
+                      legendPosition = 'none',
+                      legendLabSize = 0,
+                      legendIconSize = 0,
+                      drawConnectors = TRUE,
+                      arrowheads = FALSE,
+                      colCustom = keyvals.colour,
+                      colAlpha = c(ifelse(abs(Ferro_Suppressors_DEGs$pvalue) < 10e-5, 0.7, 0.2)),
+                      pointSize = c(ifelse(abs(Ferro_Suppressors_DEGs$pvalue) < 10e-5, 3, 3)),
+                      shape = 20,
+                      max.overlaps = 10,
+                      # maxoverlapsConnectors = Inf,
+                      caption=NULL,
+                      widthConnectors = 0.5, xlim = c(-2, 2),ylim = c(0, -log10(10e-40)))
+PTC_FerroDb_suppressors_mRNA_volcano <- PTC_FerroDb_suppressors_mRNA_volcano + theme_pubr() +
+                                    scale_y_continuous(limits=c(0,-log10(10e-40)), breaks=seq(0,40,10)) +
+                                    theme(legend.position="none")
+PTC_FerroDb_suppressors_mRNA_volcano
+ggsave("PTC_FerroDb_suppressors_mRNA_volcano.png", plot=PTC_FerroDb_suppressors_mRNA_volcano, path = figures, height=6, width=6, units=c("in"), dpi=300)
+```
+
+
+FerroDb Suppressors (High GPX4 vs Low GPX4)
+```{r}
+ keyvals.colour <- ifelse(
+    Ferro_Markers_DEGs$log2FoldChange < -0.5 & Ferro_Markers_DEGs$pvalue < 10e-5, "#3C5488B2",
+      ifelse(Ferro_Markers_DEGs$log2FoldChange > 0.5 & Ferro_Markers_DEGs$pvalue < 10e-5, "#DC0000B2",
+        'black'))
+  keyvals.colour[is.na(keyvals.colour)] <- 'black'
+  names(keyvals.colour)[keyvals.colour == "#DC0000B2"] <- 'high'
+  names(keyvals.colour)[keyvals.colour == 'black'] <- 'ns'
+  names(keyvals.colour)[keyvals.colour == "#3C5488B2"] <- 'low'
+```
+
+```{r}
+PTC_FerroDb_markers_mRNA_volcano <- EnhancedVolcano(Ferro_Markers_DEGs,
+                      title = 'FerroDB Markers',
+                      subtitle = 'High GPX4 vs Low GPX4',
+                      lab = Ferro_Markers_DEGs$gene,
+                      x = 'log2FoldChange',
+                      y = 'pvalue',
+                      xlab = bquote(~Log[2]~ 'fold change'),
+                      pCutoff = 10e-5,
+                      FCcutoff = 0.5,
+                      labSize = 3,
+                      boxedLabels = TRUE,
+                      legendPosition = 'none',
+                      legendLabSize = 0,
+                      legendIconSize = 0,
+                      drawConnectors = TRUE,
+                      arrowheads = FALSE,
+                      colCustom = keyvals.colour,
+                      colAlpha = c(ifelse(abs(Ferro_Markers_DEGs$pvalue) < 10e-5, 0.7, 0.2)),
+                      pointSize = c(ifelse(abs(Ferro_Markers_DEGs$pvalue) < 10e-5, 3, 3)),
+                      shape = 20,
+                      max.overlaps = 10,
+                      # maxoverlapsConnectors = Inf,
+                      caption=NULL,
+                      widthConnectors = 0.5, xlim = c(-2, 2),ylim = c(0, -log10(10e-40)))
+PTC_FerroDb_markers_mRNA_volcano <- PTC_FerroDb_markers_mRNA_volcano + theme_pubr() +
+                                    scale_y_continuous(limits=c(0,-log10(10e-40)), breaks=seq(0,40,10)) +
+                                    theme(legend.position="none")
+PTC_FerroDb_markers_mRNA_volcano
+ggsave("PTC_FerroDb_markers_mRNA_volcano.png", plot=PTC_FerroDb_markers_mRNA_volcano, path = figures, height=7, width=7, units=c("in"), dpi=300)
+```
