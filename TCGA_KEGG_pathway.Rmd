@@ -1,0 +1,43 @@
+
+
+
+```{r}
+countData <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_counts.csv")
+metaData <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_GPX4.csv")
+metaData$GPX4 <- ifelse(metaData$GPX4 >= median(metaData$GPX4), "High", "Low")
+countData <- as.data.frame(countData)
+metaData <- as.data.frame(metaData)
+countData <- countData %>% distinct(gene, .keep_all = TRUE)
+dds <- DESeqDataSetFromMatrix(countData=countData, colData=metaData, design=~GPX4, tidy = TRUE)
+dds <- DESeq(dds)
+res <- results(dds)
+DEGs <- results(dds, contrast=c("GPX4", "High", "Low"))
+
+DEGs_sig_up <- subset(DEGs, pvalue <= 10e-5 & log2FoldChange > 0.5)
+DEGs_sig_up <- as.data.frame(DEGs_sig_up)
+DEGs_sig_up$gene <- rownames(DEGs_sig_up)
+write_csv(DEGs_sig_up, file = "/bigrock/FurmanLab/Jordan/TCGA/PTC_GPX4_high_vs_low_up.csv")
+
+DEGs_sig_down <- subset(DEGs, pvalue <= 10e-5 & log2FoldChange < -0.5)
+DEGs_sig_down <- as.data.frame(DEGs_sig_down)
+DEGs_sig_down$gene <- rownames(DEGs_sig_down)
+write_csv(DEGs_sig_down, file = "/bigrock/FurmanLab/Jordan/TCGA/PTC_GPX4_high_vs_low_down.csv")
+```
+
+
+##### Differential Expression
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+DEGs$symbol <- mapIds(org.Hs.eg.db, keys=row.names(DEGs), column="SYMBOL", keytype="SYMBOL", multiVals="first")
+DEGs$entrez <- mapIds(org.Hs.eg.db, keys=row.names(DEGs), column="ENTREZID", keytype="SYMBOL", multiVals="first")
+DEGs$name <- mapIds(org.Hs.eg.db, keys=row.names(DEGs), column="GENENAME", keytype="SYMBOL", multiVals="first")
+DEGs.fc <- DEGs$log2FoldChange
+names(DEGs.fc) <- DEGs$entrez
+```
+
+
+##### Pathway View (Ferroptosis: hsa04216)
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+pathview(gene.data=DEGs.fc, species="hsa", path=figures, pathway.id="hsa04216")
+```
