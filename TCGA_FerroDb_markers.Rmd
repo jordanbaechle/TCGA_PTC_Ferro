@@ -1,0 +1,224 @@
+
+
+```{r}
+countData <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_counts_z.csv")
+df <- as.data.frame(countData)
+df_t <- transpose(df)
+df_t <- as.data.frame(df_t)
+rownames(df_t) <- colnames(df)
+colnames(df_t) <- df$gene
+df_t <- df_t[-1,]
+df_t$id <- rownames(df_t)
+df_t <- df_t %>% relocate(id)
+meta <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_meta.csv")
+df_t <- as.data.frame(df_t)
+meta <- as.data.frame(meta)
+merged <- merge(df_t, meta, by="id")
+
+# subset for GPX4 over-expression
+merged$GPX4 <- as.numeric(merged$GPX4)
+merged$TFRC <- as.numeric(merged$TFRC)
+merged$TF <- as.numeric(merged$TF)
+merged$FTH1 <- as.numeric(merged$FTH1)
+merged$NFE2L2 <- as.numeric(merged$NFE2L2)
+merged$GCLC <- as.numeric(merged$GCLC)
+merged$GPX4 <- as.numeric(merged$GPX4)
+merged$STEAP3 <- as.numeric(merged$STEAP3)
+merged$GCLM <- as.numeric(merged$GCLM)
+merged$HSPB1 <- as.numeric(merged$HSPB1)
+merged$ACO1 <- as.numeric(merged$ACO1)
+merged$AKR1C1 <- as.numeric(merged$AKR1C1)
+merged$NCOA4 <- as.numeric(merged$NCOA4)
+merged$CD44 <- as.numeric(merged$CD44)
+merged$ACSL1 <- as.numeric(merged$ACSL1)
+merged$ARNTL <- as.numeric(merged$ARNTL)
+merged$FLT3 <- as.numeric(merged$FLT3)
+merged$GCH1 <- as.numeric(merged$GCH1)
+merged$IFNG <- as.numeric(merged$IFNG)
+merged$IL33 <- as.numeric(merged$IL33)
+merged$TLR4 <- as.numeric(merged$TLR4)
+merged$ZEB1 <- as.numeric(merged$ZEB1)
+merged$DPP4<- as.numeric(merged$DPP4)
+merged$FANCD2 <- as.numeric(merged$FANCD2)
+merged$GOT1 <- as.numeric(merged$GOT1)
+merged$CHAC1 <- as.numeric(merged$CHAC1)
+merged$HMGCR <- as.numeric(merged$HMGCR)
+merged$SLC1A5 <- as.numeric(merged$SLC1A5)
+# merged$FTMT <- as.numeric(merged$FTMT)
+merged$SLC11A2 <- as.numeric(merged$SLC11A2)
+merged$SLC7A11 <- as.numeric(merged$SLC7A11)
+# merged$SLC11A3 <- as.numeric(merged$SLC11A3) #missing
+merged$ALOX5 <- as.numeric(merged$ALOX5)
+merged$CARS <- as.numeric(merged$CARS)
+merged$IREB2 <- as.numeric(merged$IREB2)
+merged$SLC40A1 <- as.numeric(merged$SLC40A1)
+
+merged <- subset(merged, GPX4 >= -5)
+
+merged$GPX4_med <- ifelse(merged$GPX4 >= median(merged$GPX4), "High", "Low")
+```
+
+
+```{r}
+my_comparisons <- list( c("High", "Low"))
+merged$GPX4_med = factor(merged$GPX4_med, levels = c('High', 'Low'))
+FTH1_GPX4 <- ggplot(data = merged, aes(x = GPX4_med, y = FTH1, fill = GPX4_med))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("FTH1 mRNA (z score)")  )  +
+       xlab(  c("GPX4")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(5),
+                          label = "p.signif",
+                           vjust = 0) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+FTH1_GPX4
+
+my_comparisons <- list( c("High", "Low"))
+merged$GPX4_med = factor(merged$GPX4_med, levels = c('High', 'Low'))
+HSPB1_GPX4 <- ggplot(data = merged, aes(x = GPX4_med, y = HSPB1, fill = GPX4_med))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("HSPB1 mRNA (z score)")  )  +
+       xlab(  c("GPX4")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(5),
+                          label = "p.signif",
+                           vjust = 0) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+HSPB1_GPX4
+
+
+my_comparisons <- list( c("High", "Low"))
+merged$GPX4_med = factor(merged$GPX4_med, levels = c('High', 'Low'))
+NFE2L2_GPX4 <- ggplot(data = merged, aes(x = GPX4_med, y = NFE2L2, fill = GPX4_med))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("NFE2L2 mRNA (z score)")  )  +
+       xlab(  c("GPX4")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(5),
+                          label = "p.signif",
+                           vjust = 0) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+NFE2L2_GPX4
+
+
+my_comparisons <- list( c("High", "Low"))
+merged$GPX4_med = factor(merged$GPX4_med, levels = c('High', 'Low'))
+SLC40A1_GPX4 <- ggplot(data = merged, aes(x = GPX4_med, y = SLC40A1, fill = GPX4_med))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("SLC40A1 mRNA (z score)")  )  +
+       xlab(  c("GPX4")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(5),
+                          label = "p.signif",
+                           vjust = 0) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+SLC40A1_GPX4
+
+
+my_comparisons <- list( c("High", "Low"))
+merged$GPX4_med = factor(merged$GPX4_med, levels = c('High', 'Low'))
+TFRC_GPX4 <- ggplot(data = merged, aes(x = GPX4_med, y = TFRC, fill = GPX4_med))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("TFRC mRNA (z score)")  )  +
+       xlab(  c("GPX4")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(5),
+                          label = "p.signif",
+                           vjust = 0) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+TFRC_GPX4
+
+Ferro_markers_GPX4 <- ggarrange(
+        TFRC_GPX4,
+        FTH1_GPX4, 
+        HSPB1_GPX4, 
+        NFE2L2_GPX4, 
+        SLC40A1_GPX4,
+        ncol = 5, nrow = 1, common.legend = TRUE, align = "hv", legend = "none") 
+Ferro_markers_GPX4 
+
+ggsave("Ferro_markers_GPX4.png", plot=Ferro_markers_GPX4, path=figures, height=5, width=18, units=c("in"), dpi=300)
+
+```
+
+
+
+
+
+
+
