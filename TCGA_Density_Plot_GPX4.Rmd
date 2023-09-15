@@ -1,0 +1,71 @@
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# Bioconductor: v3.17
+library(pathview)
+library(DESeq2)
+library(EnhancedVolcano)
+library(gage)
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+library(clusterProfiler)
+library(DOSE)
+library(dplyr)
+library(gapminder)
+library(tidyverse)
+library(tinytex)
+library(readxl)
+library(survival)
+library(compareGroups)
+library(scales)
+library(data.table)
+library(ggpubr)
+library(ggbeeswarm)
+library(ggpmisc)
+library(ggsci)
+library(forestplot)
+library(tidyverse)
+library(tibble)
+figures <- "/opt/home/buckcenter.org/jbaechle/TCGA/figures"
+```
+
+
+Papillary Thyroid Carcinoma (TCGA, Cell 2014)
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+countData <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_counts.csv")
+metaData <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_GPX4.csv")
+metaData$GPX4 <- ifelse(metaData$GPX4 >= median(metaData$GPX4), "High", "Low")
+```
+
+GPX4 Density Plot
+```{r}
+metaData <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/GPX4_density.csv")
+metaData$GPX4 <- as.numeric(metaData$GPX4)
+metaData$GPX4_med <- ifelse(metaData$GPX4 >= median(metaData$GPX4), "High", "Low")
+densityPlot_raw <- ggplot(metaData, aes(x=GPX4, fill=GPX4_med)) +
+  geom_density(alpha=0.4,  linewidth =1) + theme_pubr() +  scale_fill_npg() +
+       theme(
+       legend.position="none",
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("Cohort Density")  )  +
+       xlab(  c("GPX4 Expression (raw count)"))
+densityPlot_raw
+ggsave("PTC_GPX4_density_raw.png", plot=densityPlot_raw, path = figures, height=4, width=5, units=c("in"), dpi=300)
+
+metaData$GPX4_med2 <- ifelse(metaData$GPX4_z >= median(metaData$GPX4_z), "High", "Low")
+densityPlot_z <- ggplot(metaData, aes(x=GPX4_z, fill=GPX4_med2)) +
+  geom_density(alpha=0.4, linewidth =1) + theme_pubr() +  scale_fill_npg() +
+       theme(
+      legend.position="none",
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("Cohort Density")  )  +
+       xlab(  c("GPX4 Expression (z-score)"))
+densityPlot_z
+ggsave("PTC_GPX4_density_z.png", plot=densityPlot_z, path = figures, height=4, width=5, units=c("in"), dpi=300)
+
+
+
+
+```
