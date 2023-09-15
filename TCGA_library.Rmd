@@ -1,0 +1,32 @@
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# Bioconductor: v3.17
+library(pathview)
+library(DESeq2)
+library(EnhancedVolcano)
+library(gage)
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+library(clusterProfiler)
+library(DOSE)
+library(dplyr)
+library(gapminder)
+library(tidyverse)
+library(tinytex)
+library(readxl)
+library(survival)
+library(compareGroups)
+library(scales)
+library(data.table)
+library(ggpubr)
+library(ggbeeswarm)
+library(ggpmisc)
+library(ggsci)
+library(forestplot)
+library(tidyverse)
+library(tibble)
+library(ggsci)
+library(ggbeeswarm)
+library(beeswarm)
+figures <- "/opt/home/buckcenter.org/jbaechle/TCGA/figures"
+```
