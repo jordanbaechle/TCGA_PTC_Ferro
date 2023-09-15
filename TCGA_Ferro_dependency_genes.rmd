@@ -1,0 +1,1277 @@
+
+```{r}
+countData <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_counts_z.csv")
+df <- as.data.frame(countData)
+df_t <- transpose(df)
+df_t <- as.data.frame(df_t)
+rownames(df_t) <- colnames(df)
+colnames(df_t) <- df$gene
+df_t <- df_t[-1,]
+df_t$id <- rownames(df_t)
+df_t <- df_t %>% relocate(id)
+meta <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_meta.csv")
+df_t <- as.data.frame(df_t)
+meta <- as.data.frame(meta)
+merged <- merge(df_t, meta, by="id")
+
+# subset for GPX4 over-expression
+merged$GPX4 <- as.numeric(merged$GPX4)
+merged$TFRC <- as.numeric(merged$TFRC)
+merged$TF <- as.numeric(merged$TF)
+merged$FTH1 <- as.numeric(merged$FTH1)
+merged$NFE2L2 <- as.numeric(merged$NFE2L2)
+merged$GCLC <- as.numeric(merged$GCLC)
+merged$GPX4 <- as.numeric(merged$GPX4)
+merged$STEAP3 <- as.numeric(merged$STEAP3)
+merged$GCLM <- as.numeric(merged$GCLM)
+merged$HSPB1 <- as.numeric(merged$HSPB1)
+merged$ACO1 <- as.numeric(merged$ACO1)
+merged$AKR1C1 <- as.numeric(merged$AKR1C1)
+merged$NCOA4 <- as.numeric(merged$NCOA4)
+merged$CD44 <- as.numeric(merged$CD44)
+merged$ACSL1 <- as.numeric(merged$ACSL1)
+merged$ARNTL <- as.numeric(merged$ARNTL)
+merged$FLT3 <- as.numeric(merged$FLT3)
+merged$GCH1 <- as.numeric(merged$GCH1)
+merged$IFNG <- as.numeric(merged$IFNG)
+merged$IL33 <- as.numeric(merged$IL33)
+merged$TLR4 <- as.numeric(merged$TLR4)
+merged$ZEB1 <- as.numeric(merged$ZEB1)
+merged$DPP4<- as.numeric(merged$DPP4)
+merged$FANCD2 <- as.numeric(merged$FANCD2)
+merged$GOT1 <- as.numeric(merged$GOT1)
+merged$CHAC1 <- as.numeric(merged$CHAC1)
+merged$HMGCR <- as.numeric(merged$HMGCR)
+merged$SLC1A5 <- as.numeric(merged$SLC1A5)
+# merged$FTMT <- as.numeric(merged$FTMT)
+merged$SLC11A2 <- as.numeric(merged$SLC11A2)
+merged$SLC7A11 <- as.numeric(merged$SLC7A11)
+# merged$SLC11A3 <- as.numeric(merged$SLC11A3) #missing
+merged$ALOX5 <- as.numeric(merged$ALOX5)
+merged$CARS <- as.numeric(merged$CARS)
+merged$IREB2 <- as.numeric(merged$IREB2)
+
+merged <- subset(merged, GPX4 >= -5)
+
+
+# merged <- merged %>%
+#  mutate(
+#      Extrathyroidal_Extension = case_when(
+#      Extrathyroidal_Extension == "Minimal (T3)" ~ "T3",
+#      Extrathyroidal_Extension == "Moderate/Advanced (T4a)" ~ "T4a",
+#      TRUE ~ Extrathyroidal_Extension ))
+```
+
+```{r}
+my_comparisons <- list( c("Classical", "Follicular"), 
+                        c("Classical", "Tall Cell"), 
+                        c("Follicular", "Tall Cell") )
+merged$Histological_Type = factor(merged$Histological_Type, levels = c('Classical', 'Follicular', 'Tall Cell'))
+GPX4_Histology <- ggplot(data = merged, aes(x = Histological_Type, y = GPX4, fill = Histological_Type))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("GPX4 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+GPX4_Histology
+
+my_comparisons <- list( c("None", "T3"), 
+                        c("None", "T4a"), 
+                        c("T3", "T4a") )
+merged$Extrathyroidal_Extension = factor(merged$Extrathyroidal_Extension, levels = c('None', 'T3', 'T4a'))
+GPX4_Extrathyroidal_Extension <- ggplot(data = merged, aes(x = Extrathyroidal_Extension, y = GPX4, fill = Extrathyroidal_Extension))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("FTH1 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(3, 4, 5),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) 
+GPX4_Extrathyroidal_Extension
+
+
+my_comparisons <- list( c("Neither", "Ras-like"), 
+                        c("Neither", "Braf-like"), 
+                        c("Ras-like", "Braf-like") )
+merged$BRAF_RAS = factor(merged$BRAF_RAS, levels = c('Neither', 'Ras-like', 'Braf-like'))
+GPX4_BRAF_RAS <- ggplot(data = merged, aes(x = BRAF_RAS, y = GPX4, fill = BRAF_RAS))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("GPX4 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       # scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       # guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) +
+       scale_fill_manual(values = c("#E64B35B2", "#4DBBD5B2", "#00A087B2","#FFFFFF"))
+GPX4_BRAF_RAS
+
+
+
+my_comparisons <- list( c("Low", "Intermediate"), 
+                        c("Low", "High"), 
+                        c("Intermediate", "High") )
+merged$Risk_Group = factor(merged$Risk_Group, levels = c('Low', 'Intermediate', 'High'))
+GPX4_Risk_Group <- ggplot(data = merged, aes(x = Risk_Group, y = GPX4, fill = Risk_Group))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("GPX4 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+GPX4_Risk_Group
+
+
+my_comparisons <- list( c("Stage I", "Stage II"), 
+                        c("Stage I", 'Stage III'),
+                        c("Stage I", 'Stage IV'),
+                        c("Stage II", "Stage III"), 
+                        c("Stage III", 'Stage IV'))
+merged$Disease_Stage = factor(merged$Disease_Stage, levels = c('Stage I', 'Stage II', 'Stage III', 'Stage IV'))
+GPX4_Stage <- ggplot(data = merged, aes(x = Disease_Stage, y = GPX4, fill = Disease_Stage))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("GPX4 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(3, 4, 5, 6, 7),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+GPX4_Stage
+
+
+GPX4_GPX4_corr <- ggplot(merged, aes(GPX4, GPX4)) + 
+                  geom_point(size = 2, alpha = 0.6, shape=21, stroke = .7, color='black', fill='#F39B7FFF')  +
+                  stat_poly_line(method=lm, color="black", fill="#7E6148B2", size=2.75) +
+                  stat_poly_eq(use_label(c("R2", "p"))) +
+                  theme_pubr() +
+                  theme(
+                         axis.title.y = element_text(vjust = +1)) +
+                         ylab(  c("GPX4 mRNA (z score)")  )  +
+                         xlab(  c("GPX4 mRNA (z score)")  )  +
+                         rremove("legend.title")+
+                         font("xylab",size=18)+  
+                         font("xy",size=18)+ 
+                         font("xy.text", size = 18) +  
+                         font("legend.text",size = 18) +
+                         scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+                         scale_x_continuous(limits=c(-5,5), breaks=seq(-5,5, by = 2.5)) +
+                         scale_fill_npg() + scale_color_npg() +
+                         guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+FTH1_GPX4_corr
+
+GPX4 <- ggarrange(
+        GPX4_Histology, 
+        GPX4_BRAF_RAS + rremove("ylab") +  rremove("y.text") , 
+        GPX4_Stage + rremove("ylab") + rremove("y.text"), 
+        GPX4_GPX4_corr + rremove("ylab") + rremove("y.text") + theme(axis.title.x = element_text(margin = margin(t = -80))),
+        ncol = 4, nrow = 1, common.legend = TRUE, align = "hv", legend = "none") 
+GPX4
+ggsave("GPX4_all.png", plot=GPX4, path=figures, height=5, width=18, units=c("in"), dpi=300)
+```
+
+
+```{r}
+my_comparisons <- list( c("Classical", "Follicular"), 
+                        c("Classical", "Tall Cell"), 
+                        c("Follicular", "Tall Cell") )
+merged$Histological_Type = factor(merged$Histological_Type, levels = c('Classical', 'Follicular', 'Tall Cell'))
+FTH1_Histology <- ggplot(data = merged, aes(x = Histological_Type, y = FTH1, fill = Histological_Type))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("FTH1 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+FTH1_Histology
+
+my_comparisons <- list( c("None", "T3"), 
+                        c("None", "T4a"), 
+                        c("T3", "T4a") )
+merged$Extrathyroidal_Extension = factor(merged$Extrathyroidal_Extension, levels = c('None', 'T3', 'T4a'))
+FTH1_Extrathyroidal_Extension <- ggplot(data = merged, aes(x = Extrathyroidal_Extension, y = FTH1, fill = Extrathyroidal_Extension))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("FTH1 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) 
+FTH1_Extrathyroidal_Extension
+
+
+my_comparisons <- list( c("Neither", "Ras-like"), 
+                        c("Neither", "Braf-like"), 
+                        c("Ras-like", "Braf-like") )
+merged$BRAF_RAS = factor(merged$BRAF_RAS, levels = c('Neither', 'Ras-like', 'Braf-like'))
+FTH1_BRAF_RAS <- ggplot(data = merged, aes(x = BRAF_RAS, y = FTH1, fill = BRAF_RAS))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("FTH1 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       # scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       # guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) +
+       scale_fill_manual(values = c("#E64B35B2", "#4DBBD5B2", "#00A087B2","#FFFFFF"))
+FTH1_BRAF_RAS
+
+
+
+my_comparisons <- list( c("Low", "Intermediate"), 
+                        c("Low", "High"), 
+                        c("Intermediate", "High") )
+merged$Risk_Group = factor(merged$Risk_Group, levels = c('Low', 'Intermediate', 'High'))
+FTH1_Risk_Group <- ggplot(data = merged, aes(x = Risk_Group, y = FTH1, fill = Risk_Group))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("FTH1 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+FTH1_Risk_Group
+
+
+my_comparisons <- list( c("Stage I", "Stage II"), 
+                        c("Stage I", 'Stage III'),
+                        c("Stage I", 'Stage IV'),
+                        c("Stage II", "Stage III"), 
+                        c("Stage III", 'Stage IV'))
+merged$Disease_Stage = factor(merged$Disease_Stage, levels = c('Stage I', 'Stage II', 'Stage III', 'Stage IV'))
+FTH1_Stage <- ggplot(data = merged, aes(x = Disease_Stage, y = FTH1, fill = Disease_Stage))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("FTH1 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(3, 4, 5, 6, 7),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+FTH1_Stage
+
+
+FTH1_GPX4_corr <- ggplot(merged, aes(GPX4, FTH1)) + 
+                  geom_point(size = 2, alpha = 0.6, shape=21, stroke = .7, color='black', fill='#F39B7FFF')  +
+                  stat_poly_line(method=lm, color="black", fill="#7E6148B2", size=2.75) +
+                  stat_poly_eq(use_label(c("R2", "p"))) +
+                  theme_pubr() +
+                  theme(
+                         axis.title.y = element_text(vjust = +1)) +
+                         ylab(  c("FTH1 mRNA (z score)")  )  +
+                         xlab(  c("GPX4 mRNA (z score)")  )  +
+                         rremove("legend.title")+
+                         font("xylab",size=18)+  
+                         font("xy",size=18)+ 
+                         font("xy.text", size = 18) +  
+                         font("legend.text",size = 18) +
+                         scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+                         scale_x_continuous(limits=c(-5,5), breaks=seq(-5,5, by = 2.5)) +
+                         scale_fill_npg() + scale_color_npg() +
+                         guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+FTH1_GPX4_corr
+
+FTH1 <- ggarrange(
+        FTH1_Histology, 
+        FTH1_BRAF_RAS + rremove("ylab") +  rremove("y.text") , 
+        FTH1_Stage + rremove("ylab") + rremove("y.text"), 
+        FTH1_GPX4_corr + rremove("ylab") + rremove("y.text") + theme(axis.title.x = element_text(margin = margin(t = -80))),
+        ncol = 4, nrow = 1, common.legend = TRUE, align = "hv", legend = "none") 
+FTH1
+ggsave("FTH1_all.png", plot=FTH1, path=figures, height=5, width=18, units=c("in"), dpi=300)
+```
+
+
+```{r}
+my_comparisons <- list( c("Classical", "Follicular"), 
+                        c("Classical", "Tall Cell"), 
+                        c("Follicular", "Tall Cell") )
+merged$Histological_Type = factor(merged$Histological_Type, levels = c('Classical', 'Follicular', 'Tall Cell'))
+TFRC_Histology <- ggplot(data = merged, aes(x = Histological_Type, y = TFRC, fill = Histological_Type))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("TFRC mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+TFRC_Histology
+
+my_comparisons <- list( c("None", "T3"), 
+                        c("None", "T4a"), 
+                        c("T3", "T4a") )
+merged$Extrathyroidal_Extension = factor(merged$Extrathyroidal_Extension, levels = c('None', 'T3', 'T4a'))
+TFRC_Extrathyroidal_Extension <- ggplot(data = merged, aes(x = Extrathyroidal_Extension, y = TFRC, fill = Extrathyroidal_Extension))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("TFRC mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) 
+TFRC_Extrathyroidal_Extension
+
+
+my_comparisons <- list( c("Neither", "Ras-like"), 
+                        c("Neither", "Braf-like"), 
+                        c("Ras-like", "Braf-like") )
+merged$BRAF_RAS = factor(merged$BRAF_RAS, levels = c('Neither', 'Ras-like', 'Braf-like'))
+TFRC_BRAF_RAS <- ggplot(data = merged, aes(x = BRAF_RAS, y = TFRC, fill = BRAF_RAS))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("TFRC mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       # scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) +
+       scale_fill_manual(values = c("#E64B35B2", "#4DBBD5B2", "#00A087B2","#FFFFFF"))
+TFRC_BRAF_RAS
+
+
+
+my_comparisons <- list( c("Low", "Intermediate"), 
+                        c("Low", "High"), 
+                        c("Intermediate", "High") )
+merged$Risk_Group = factor(merged$Risk_Group, levels = c('Low', 'Intermediate', 'High'))
+TFRC_Risk_Group <- ggplot(data = merged, aes(x = Risk_Group, y = TFRC, fill = Risk_Group))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("TFRC mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+TFRC_Risk_Group
+
+
+my_comparisons <- list( c("Stage I", "Stage II"), 
+                        c("Stage I", 'Stage III'),
+                        c("Stage I", 'Stage IV'),
+                        c("Stage II", "Stage III"), 
+                        c("Stage III", 'Stage IV'))
+merged$Disease_Stage = factor(merged$Disease_Stage, levels = c('Stage I', 'Stage II', 'Stage III', 'Stage IV'))
+TFRC_Stage <- ggplot(data = merged, aes(x = Disease_Stage, y = TFRC, fill = Disease_Stage))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("TFRC mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(3, 4, 5, 6, 7),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+TFRC_Stage
+
+
+TFRC_GPX4_corr <- ggplot(merged, aes(GPX4, TFRC)) + 
+                  geom_point(size = 2, alpha = 0.6, shape=21, stroke = .7, color='black', fill='#F39B7FFF')  +
+                  stat_poly_line(method=lm, color="black", fill="#7E6148B2", size=2.75) +
+                  stat_poly_eq(use_label(c("R2", "p"))) +
+                  theme_pubr() +
+                  theme(
+                         axis.title.y = element_text(vjust = +1)) +
+                         ylab(  c("TFRC mRNA (z score)")  )  +
+                         xlab(  c("GPX4 mRNA (z score)")  )  +
+                         rremove("legend.title")+
+                         font("xylab",size=18)+  
+                         font("xy",size=18)+ 
+                         font("xy.text", size = 18) +  
+                         font("legend.text",size = 18) +
+                         scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+                         scale_x_continuous(limits=c(-5,5), breaks=seq(-5,5, by = 2.5)) +
+                         scale_fill_npg() + scale_color_npg() +
+                         guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+TFRC_GPX4_corr
+
+
+
+
+
+TFRC <- ggarrange(
+        TFRC_Histology, 
+        TFRC_BRAF_RAS + rremove("ylab") +  rremove("y.text") , 
+        TFRC_Stage + rremove("ylab") + rremove("y.text"), 
+        TFRC_GPX4_corr + rremove("ylab") + rremove("y.text") + theme(axis.title.x = element_text(margin = margin(t = -80))),
+        ncol = 4, nrow = 1, common.legend = TRUE, align = "hv", legend = "none") 
+TFRC
+ggsave("TFRC_all.png", plot=TFRC, path=figures, height=6, width=22, units=c("in"), dpi=300)
+```
+
+
+
+```{r}
+my_comparisons <- list( c("Classical", "Follicular"), 
+                        c("Classical", "Tall Cell"), 
+                        c("Follicular", "Tall Cell") )
+merged$Histological_Type = factor(merged$Histological_Type, levels = c('Classical', 'Follicular', 'Tall Cell'))
+HSPB1_Histology <- ggplot(data = merged, aes(x = Histological_Type, y = HSPB1, fill = Histological_Type))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("HSPB1 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+HSPB1_Histology
+
+my_comparisons <- list( c("None", "T3"), 
+                        c("None", "T4a"), 
+                        c("T3", "T4a") )
+merged$Extrathyroidal_Extension = factor(merged$Extrathyroidal_Extension, levels = c('None', 'T3', 'T4a'))
+HSPB1_Extrathyroidal_Extension <- ggplot(data = merged, aes(x = Extrathyroidal_Extension, y = HSPB1, fill = Extrathyroidal_Extension))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("HSPB1 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) 
+HSPB1_Extrathyroidal_Extension
+
+
+my_comparisons <- list( c("Neither", "Ras-like"), 
+                        c("Neither", "Braf-like"), 
+                        c("Ras-like", "Braf-like") )
+merged$BRAF_RAS = factor(merged$BRAF_RAS, levels = c('Neither', 'Ras-like', 'Braf-like'))
+HSPB1_BRAF_RAS <- ggplot(data = merged, aes(x = BRAF_RAS, y = HSPB1, fill = BRAF_RAS))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("HSPB1 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       # scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) +
+       scale_fill_manual(values = c("#E64B35B2", "#4DBBD5B2", "#00A087B2","#FFFFFF"))
+HSPB1_BRAF_RAS
+
+
+
+my_comparisons <- list( c("Low", "Intermediate"), 
+                        c("Low", "High"), 
+                        c("Intermediate", "High") )
+merged$Risk_Group = factor(merged$Risk_Group, levels = c('Low', 'Intermediate', 'High'))
+HSPB1_Risk_Group <- ggplot(data = merged, aes(x = Risk_Group, y = HSPB1, fill = Risk_Group))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("HSPB1 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+HSPB1_Risk_Group
+
+
+my_comparisons <- list( c("Stage I", "Stage II"), 
+                        c("Stage I", 'Stage III'),
+                        c("Stage I", 'Stage IV'),
+                        c("Stage II", "Stage III"), 
+                        c("Stage III", 'Stage IV'))
+merged$Disease_Stage = factor(merged$Disease_Stage, levels = c('Stage I', 'Stage II', 'Stage III', 'Stage IV'))
+HSPB1_Stage <- ggplot(data = merged, aes(x = Disease_Stage, y = HSPB1, fill = Disease_Stage))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("HSPB1 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(3, 4, 5, 6, 7),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+HSPB1_Stage
+
+
+HSPB1_GPX4_corr <- ggplot(merged, aes(GPX4, HSPB1)) + 
+                  geom_point(size = 2, alpha = 0.6, shape=21, stroke = .7, color='black', fill='#F39B7FFF')  +
+                  stat_poly_line(method=lm, color="black", fill="#7E6148B2", size=2.75) +
+                  stat_poly_eq(use_label(c("R2", "p"))) +
+                  theme_pubr() +
+                  theme(
+                         axis.title.y = element_text(vjust = +1)) +
+                         ylab(  c("HSPB1 mRNA (z score)")  )  +
+                         xlab(  c("GPX4 mRNA (z score)")  )  +
+                         rremove("legend.title")+
+                         font("xylab",size=18)+  
+                         font("xy",size=18)+ 
+                         font("xy.text", size = 18) +  
+                         font("legend.text",size = 18) +
+                         scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+                         scale_x_continuous(limits=c(-5,5), breaks=seq(-5,5, by = 2.5)) +
+                         scale_fill_npg() + scale_color_npg() +
+                         guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+HSPB1_GPX4_corr
+
+
+
+
+
+HSPB1 <- ggarrange(
+        HSPB1_Histology, 
+        HSPB1_BRAF_RAS + rremove("ylab") +  rremove("y.text") , 
+        HSPB1_Stage + rremove("ylab") + rremove("y.text"), 
+        HSPB1_GPX4_corr + rremove("ylab") + rremove("y.text") + theme(axis.title.x = element_text(margin = margin(t = -80))),
+        ncol = 4, nrow = 1, common.legend = TRUE, align = "hv", legend = "none") 
+HSPB1
+ggsave("HSPB1_all.png", plot=HSPB1, path=figures, height=6, width=22, units=c("in"), dpi=300)
+```
+
+```{r}
+my_comparisons <- list( c("Classical", "Follicular"), 
+                        c("Classical", "Tall Cell"), 
+                        c("Follicular", "Tall Cell") )
+merged$Histological_Type = factor(merged$Histological_Type, levels = c('Classical', 'Follicular', 'Tall Cell'))
+CD44_Histology <- ggplot(data = merged, aes(x = Histological_Type, y = CD44, fill = Histological_Type))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("CD44 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+CD44_Histology
+
+my_comparisons <- list( c("None", "T3"), 
+                        c("None", "T4a"), 
+                        c("T3", "T4a") )
+merged$Extrathyroidal_Extension = factor(merged$Extrathyroidal_Extension, levels = c('None', 'T3', 'T4a'))
+CD44_Extrathyroidal_Extension <- ggplot(data = merged, aes(x = Extrathyroidal_Extension, y = CD44, fill = Extrathyroidal_Extension))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("CD44 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) 
+CD44_Extrathyroidal_Extension
+
+
+my_comparisons <- list( c("Neither", "Ras-like"), 
+                        c("Neither", "Braf-like"), 
+                        c("Ras-like", "Braf-like") )
+merged$BRAF_RAS = factor(merged$BRAF_RAS, levels = c('Neither', 'Ras-like', 'Braf-like'))
+CD44_BRAF_RAS <- ggplot(data = merged, aes(x = BRAF_RAS, y = CD44, fill = BRAF_RAS))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("CD44 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       # scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) +
+       scale_fill_manual(values = c("#E64B35B2", "#4DBBD5B2", "#00A087B2","#FFFFFF"))
+CD44_BRAF_RAS
+
+
+
+my_comparisons <- list( c("Low", "Intermediate"), 
+                        c("Low", "High"), 
+                        c("Intermediate", "High") )
+merged$Risk_Group = factor(merged$Risk_Group, levels = c('Low', 'Intermediate', 'High'))
+CD44_Risk_Group <- ggplot(data = merged, aes(x = Risk_Group, y = CD44, fill = Risk_Group))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("CD44 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+CD44_Risk_Group
+
+
+my_comparisons <- list( c("Stage I", "Stage II"), 
+                        c("Stage I", 'Stage III'),
+                        c("Stage I", 'Stage IV'),
+                        c("Stage II", "Stage III"), 
+                        c("Stage III", 'Stage IV'))
+merged$Disease_Stage = factor(merged$Disease_Stage, levels = c('Stage I', 'Stage II', 'Stage III', 'Stage IV'))
+CD44_Stage <- ggplot(data = merged, aes(x = Disease_Stage, y = CD44, fill = Disease_Stage))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("CD44 mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(3, 4, 5, 6, 7),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+CD44_Stage
+
+
+CD44_GPX4_corr <- ggplot(merged, aes(GPX4, CD44)) + 
+                  geom_point(size = 2, alpha = 0.6, shape=21, stroke = .7, color='black', fill='#F39B7FFF')  +
+                  stat_poly_line(method=lm, color="black", fill="#7E6148B2", size=2.75) +
+                  stat_poly_eq(use_label(c("R2", "p"))) +
+                  theme_pubr() +
+                  theme(
+                         axis.title.y = element_text(vjust = +1)) +
+                         ylab(  c("HSPB1 mRNA (z score)")  )  +
+                         xlab(  c("GPX4 mRNA (z score)")  )  +
+                         rremove("legend.title")+
+                         font("xylab",size=18)+  
+                         font("xy",size=18)+ 
+                         font("xy.text", size = 18) +  
+                         font("legend.text",size = 18) +
+                         scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+                         scale_x_continuous(limits=c(-5,5), breaks=seq(-5,5, by = 2.5)) +
+                         scale_fill_npg() + scale_color_npg() +
+                         guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+CD44_GPX4_corr
+
+
+
+
+
+CD44 <- ggarrange(
+        CD44_Histology, 
+        CD44_BRAF_RAS + rremove("ylab") +  rremove("y.text") , 
+        CD44_Stage + rremove("ylab") + rremove("y.text"), 
+        CD44_GPX4_corr + rremove("ylab") + rremove("y.text") + theme(axis.title.x = element_text(margin = margin(t = -80))),
+        ncol = 4, nrow = 1, common.legend = TRUE, align = "hv", legend = "none") 
+CD44
+ggsave("CD44_all.png", plot=CD44, path=figures, height=6, width=22, units=c("in"), dpi=300)
+```
+
+
+```{r}
+my_comparisons <- list( c("Classical", "Follicular"), 
+                        c("Classical", "Tall Cell"), 
+                        c("Follicular", "Tall Cell") )
+merged$Histological_Type = factor(merged$Histological_Type, levels = c('Classical', 'Follicular', 'Tall Cell'))
+HMGCR_Histology <- ggplot(data = merged, aes(x = Histological_Type, y = HMGCR, fill = Histological_Type))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("HMGCR mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+HMGCR_Histology
+
+my_comparisons <- list( c("None", "T3"), 
+                        c("None", "T4a"), 
+                        c("T3", "T4a") )
+merged$Extrathyroidal_Extension = factor(merged$Extrathyroidal_Extension, levels = c('None', 'T3', 'T4a'))
+HMGCR_Extrathyroidal_Extension <- ggplot(data = merged, aes(x = Extrathyroidal_Extension, y = HMGCR, fill = Extrathyroidal_Extension))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("HMGCR mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) 
+HMGCR_Extrathyroidal_Extension
+
+
+my_comparisons <- list( c("Neither", "Ras-like"), 
+                        c("Neither", "Braf-like"), 
+                        c("Ras-like", "Braf-like") )
+merged$BRAF_RAS = factor(merged$BRAF_RAS, levels = c('Neither', 'Ras-like', 'Braf-like'))
+HMGCR_BRAF_RAS <- ggplot(data = merged, aes(x = BRAF_RAS, y = HMGCR, fill = BRAF_RAS))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("HMGCR mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       # scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black"))) +
+       scale_fill_manual(values = c("#E64B35B2", "#4DBBD5B2", "#00A087B2","#FFFFFF"))
+HMGCR_BRAF_RAS
+
+
+
+my_comparisons <- list( c("Low", "Intermediate"), 
+                        c("Low", "High"), 
+                        c("Intermediate", "High") )
+merged$Risk_Group = factor(merged$Risk_Group, levels = c('Low', 'Intermediate', 'High'))
+HMGCR_Risk_Group <- ggplot(data = merged, aes(x = Risk_Group, y = HMGCR, fill = Risk_Group))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("HMGCR mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(4, 5, 6),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+HMGCR_Risk_Group
+
+
+my_comparisons <- list( c("Stage I", "Stage II"), 
+                        c("Stage I", 'Stage III'),
+                        c("Stage I", 'Stage IV'),
+                        c("Stage II", "Stage III"), 
+                        c("Stage III", 'Stage IV'))
+merged$Disease_Stage = factor(merged$Disease_Stage, levels = c('Stage I', 'Stage II', 'Stage III', 'Stage IV'))
+HMGCR_Stage <- ggplot(data = merged, aes(x = Disease_Stage, y = HMGCR, fill = Disease_Stage))+
+       geom_violin(alpha=0.65, position = position_dodge(width = .8),size=1,color=NA) +
+       geom_boxplot(outlier.size = -1, color="black",lwd=0.7,position = position_dodge(width = .8),  alpha = 0.7,show.legend = F)+
+       #geom_point( shape = 21,size=2, position = position_jitterdodge(), color="black",alpha=1) +
+       geom_quasirandom(shape = 21, size=1.5, dodge.width = .8, alpha=.7,show.legend = F) +
+       theme_pubr() +
+       theme(
+       axis.title.y = element_text(vjust = +1),
+       axis.text.x = element_text(angle = 45, hjust=1)) +
+       ylab(  c("HMGCR mRNA (z score)")  )  +
+       xlab(  c(" ")  )  +
+       rremove("legend.title")+
+       font("xylab",size=18)+  
+       font("xy",size=18)+ 
+       font("xy.text", size = 18) +  
+       font("legend.text",size = 18) +
+       scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+       scale_fill_npg() + 
+       stat_compare_means(comparisons = my_comparisons,
+                          method = "t.test",
+                          label.y = c(3, 4, 5, 6, 7),
+                          label = "p.signif",
+                           vjust = 0) +
+       stat_compare_means(method = "anova",
+                          label.y = 7) +
+       guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+HMGCR_Stage
+
+
+HMGCR_GPX4_corr <- ggplot(merged, aes(GPX4, HMGCR)) + 
+                  geom_point(size = 2, alpha = 0.6, shape=21, stroke = .7, color='black', fill='#F39B7FFF')  +
+                  stat_poly_line(method=lm, color="black", fill="#7E6148B2", size=2.75) +
+                  stat_poly_eq(use_label(c("R2", "p"))) +
+                  theme_pubr() +
+                  theme(
+                         axis.title.y = element_text(vjust = +1)) +
+                         ylab(  c("HMGCR mRNA (z score)")  )  +
+                         xlab(  c("GPX4 mRNA (z score)")  )  +
+                         rremove("legend.title")+
+                         font("xylab",size=18)+  
+                         font("xy",size=18)+ 
+                         font("xy.text", size = 18) +  
+                         font("legend.text",size = 18) +
+                         scale_y_continuous(limits=c(-5,7.5), breaks=seq(-5,5, by = 2.5)) + 
+                         scale_x_continuous(limits=c(-5,5), breaks=seq(-5,5, by = 2.5)) +
+                         scale_fill_npg() + scale_color_npg() +
+                         guides(fill = guide_legend(override.aes = list(alpha = 1,color="black")))
+HMGCR_GPX4_corr
+
+HMGCR <- ggarrange(
+        HMGCR_Histology, 
+        HMGCR_BRAF_RAS + rremove("ylab") +  rremove("y.text") , 
+        HMGCR_Stage + rremove("ylab") + rremove("y.text"), 
+        HMGCR_GPX4_corr + rremove("ylab") + rremove("y.text") + theme(axis.title.x = element_text(margin = margin(t = -80))),
+        ncol = 4, nrow = 1, common.legend = TRUE, align = "hv", legend = "none") 
+HMGCR
+ggsave("HMGCR_all.png", plot=HMGCR, path=figures, height=6, width=22, units=c("in"), dpi=300)
+```
+
+
+
