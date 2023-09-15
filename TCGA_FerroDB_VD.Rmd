@@ -1,0 +1,47 @@
+
+```{r}
+library(ggVennDiagram)
+library(ggplot2)
+library(readr)
+library(dplyr)
+figures <- "/opt/home/buckcenter.org/jbaechle/TCGA/figures"
+```
+
+
+### Load DEPs
+```{r}
+
+FerroDB_Drivers <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/ferroptosis_driver.csv")
+FerroDB_Suppressors <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/ferroptosis_suppressor.csv")
+# FerroDB_Markers <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/ferroptosis_marker.csv")
+FerroDB_Unclassified_Regulators <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/ferroptosis_unclassified.csv")
+GPX4_high_vs_low_up_DEGs <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_GPX4_high_vs_low_up.csv")
+GPX4_high_vs_low_down_DEGs <- read_csv("/bigrock/FurmanLab/Jordan/TCGA/PTC_GPX4_high_vs_low_down.csv")
+
+
+FerroDB_Drivers <- as.character(as.data.frame(FerroDB_Drivers)$gene)
+FerroDB_Suppressors <- as.character(as.data.frame(FerroDB_Suppressors)$gene)
+# FerroDB_Markers <- as.character(as.data.frame(FerroDB_Markers)$gene)
+FerroDB_Unclassified_Regulators <- as.character(as.data.frame(FerroDB_Unclassified_Regulators)$gene)
+GPX4_high_vs_low_up_DEGs <- as.character(as.data.frame(GPX4_high_vs_low_up_DEGs)$gene)
+GPX4_high_vs_low_down_DEGs <- as.character(as.data.frame(GPX4_high_vs_low_down_DEGs)$gene)
+
+x_up <- list(A = GPX4_high_vs_low_up_DEGs, B = FerroDB_Drivers, C = FerroDB_Suppressors, D = FerroDB_Unclassified_Regulators)
+
+VDplot_up <- ggVennDiagram(x_up, lwd = 1, set_color = c("white","white","white","white"), label = "count") + 
+        scale_color_manual(values = c("black","black","black","black")) +
+        scale_fill_gradient(low = "#ffffff", high = "#DC0000B2", breaks=c(0,250,500, 750, 1000, 1250),
+                           limits=c(0,1200))
+VDplot_up
+ggsave("TCGA_venn_diagram_DEGs_up.png", plot=VDplot_up, path = figures, height=6, width=6, units=c("in"), dpi=300)
+
+x_down <- list(A = GPX4_high_vs_low_down_DEGs, B = FerroDB_Drivers, C = FerroDB_Suppressors, D = FerroDB_Unclassified_Regulators)
+
+VDplot_down  <- ggVennDiagram(x_down, lwd = 1, set_color = c("white","white","white","white"), label = "count") + 
+        scale_color_manual(values = c("black","black","black","black")) +
+        scale_fill_gradient(low = "#ffffff", high = "#3C5488B2", breaks=c(0,250,500, 750, 1000, 1250),
+                           limits=c(0,1200))
+VDplot_down 
+ggsave("TCGA_venn_diagram_DEGs_down.png", plot=VDplot_down, path = figures,  height=6, width=6, units=c("in"), dpi=300)
+```
+
